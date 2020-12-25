@@ -4,17 +4,19 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import numpy as np
 
-class RestAgent():
+
+class RestAgent(object):
     def __init__(self):
         # request header
         self.user_agent = "Mozilla/5.0 (Windows NT 6.1; WOW64) " \
-                     "AppleWebKit/537.36 (KHTML, like Gecko) " \
-                     "Chrome/57.0.2987.133 Safari/537.36 "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) " \
+                          "Chrome/57.0.2987.133 Safari/537.36 "
 
         # simulate http request
         self.session = requests.Session()
         self.session.headers['User-Agent'] = self.user_agent
-        self.session.headers['X-Forwarded-For'] = ':'.join('{0:x}'.format(np.random.randint(0, 2**16 - 1)) for i in range(4)) + ':1'
+        self.session.headers['X-Forwarded-For'] = ':'.join(
+            '{0:x}'.format(np.random.randint(0, 2 ** 16 - 1)) for i in range(4)) + ':1'
         self.proxies = None
 
     def add_headers(self, dict):
@@ -26,7 +28,7 @@ class RestAgent():
     def set_proxies(self, proxies):
         self.proxies = proxies
 
-    def do_request(self, url, param = None, method="GET", type="text", encoding = None, json = None, **kwargs):
+    def do_request(self, url, param=None, method="GET", type="text", encoding=None, json=None, **kwargs):
         if self.proxies is None:
             if method == "GET":
                 res = self.session.get(url, params=param, **kwargs)
@@ -59,14 +61,14 @@ class RestAgent():
     def get_aspx_param(self, url):
         html = self.do_request(url)
         bsObj = BeautifulSoup(html, 'html5lib')
-        __VIEWSTATE          = bsObj.find('input', {'id': '__VIEWSTATE'}).attrs['value']
-        __EVENTVALIDATION    = bsObj.find('input', {'id': '__EVENTVALIDATION'}).attrs['value']
-        __VIEWSTATEGENERATOR = bsObj.find('input', {'id' : '__VIEWSTATEGENERATOR'}).attrs['value']
+        __VIEWSTATE = bsObj.find('input', {'id': '__VIEWSTATE'}).attrs['value']
+        __EVENTVALIDATION = bsObj.find('input', {'id': '__EVENTVALIDATION'}).attrs['value']
+        __VIEWSTATEGENERATOR = bsObj.find('input', {'id': '__VIEWSTATEGENERATOR'}).attrs['value']
 
         data = {
-            "__VIEWSTATE"            : __VIEWSTATE,
-            "__EVENTVALIDATION"     : __EVENTVALIDATION,
-            "__VIEWSTATEGENERATOR"  : __VIEWSTATEGENERATOR,
+            "__VIEWSTATE": __VIEWSTATE,
+            "__EVENTVALIDATION": __EVENTVALIDATION,
+            "__VIEWSTATEGENERATOR": __VIEWSTATEGENERATOR,
         }
         return data
 
@@ -91,8 +93,8 @@ class RestAgent():
                     rows = table.findAll('tr')
                     for row in rows:
                         cols = row.findAll('td')
-                        if (len(cols) > 5) :
-                            ip   = cols[0].text
+                        if (len(cols) > 5):
+                            ip = cols[0].text
                             port = cols[1].text
                             type = cols[4].text
                             data.append((ip, port, type))
@@ -106,6 +108,7 @@ class RestAgent():
         df.columns = ['IP', 'Port', 'Type']
 
         return df
+
 
 if __name__ == '__main__':
     aqi = RestAgent()

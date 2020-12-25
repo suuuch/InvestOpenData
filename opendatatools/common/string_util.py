@@ -8,11 +8,12 @@ def remove_chinese(str):
         s += w
     return s
 
+
 def remove_non_numerical(s):
     f = ''
     for i in range(len(s)):
         try:
-            f = float(s[:i+1])
+            f = float(s[:i + 1])
         except:
             return f
     return str(f)

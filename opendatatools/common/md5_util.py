@@ -2,6 +2,7 @@
 
 import hashlib
 
+
 def md5(text):
     hl = hashlib.md5()
     hl.update(text.encode(encoding='utf-8'))

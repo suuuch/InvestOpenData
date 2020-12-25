@@ -9,23 +9,25 @@ import re
 from xml.etree import ElementTree
 
 SHF_name_map = {"CJ1": "成交量",
-                   "CJ1_CHG": "成交量增减",
-                   "PARTICIPANTABBR1": "成交量期货公司",
-                   "CJ2": "持买仓量",
-                   "CJ2_CHG": "持买仓量增减",
-                   "PARTICIPANTABBR2": "持买仓量期货公司",
-                   "CJ3": "持卖仓量",
-                   "CJ3_CHG": "持卖仓量增减",
-                   "PARTICIPANTABBR3": "持卖仓量期货公司",
-                   "RANK": "名次",
-                   "INSTRUMENTID": "symbol",
-                   }
+                "CJ1_CHG": "成交量增减",
+                "PARTICIPANTABBR1": "成交量期货公司",
+                "CJ2": "持买仓量",
+                "CJ2_CHG": "持买仓量增减",
+                "PARTICIPANTABBR2": "持买仓量期货公司",
+                "CJ3": "持卖仓量",
+                "CJ3_CHG": "持卖仓量增减",
+                "PARTICIPANTABBR3": "持卖仓量期货公司",
+                "RANK": "名次",
+                "INSTRUMENTID": "symbol",
+                }
+
 
 def format_field(x):
     if type(x) == str:
         return x.replace('\n', '').strip()
     else:
         return x
+
 
 def _merge_df(df_list):
     df_result = None
@@ -36,19 +38,22 @@ def _merge_df(df_list):
             df_result = pd.merge(df_result, df, left_index=True, right_index=True)
     return df_result
 
+
 def _concat_df(df_list):
     return pd.concat(df_list)
 
+
 def _rename_df(df):
     name_map = {
-        "会员简称" : "期货公司",
-        "（手）"   : "",
+        "会员简称": "期货公司",
+        "（手）": "",
     }
     for col in df.columns:
         for name, value in name_map.items():
             if name in col:
                 col_new = col.replace(name, value)
                 df.rename(columns={col: col_new}, inplace=True)
+
 
 class SHFAgent(RestAgent):
     def __init__(self):
@@ -61,7 +66,7 @@ class SHFAgent(RestAgent):
         rsp = json.loads(response)
 
         code = rsp['o_code']
-        msg  = rsp['o_msg']
+        msg = rsp['o_msg']
 
         if code != 0:
             return None, msg
@@ -75,14 +80,15 @@ class SHFAgent(RestAgent):
         df['date'] = date
 
         for col in df.columns:
-            df[col] = df[col].apply(lambda x : format_field(x))
+            df[col] = df[col].apply(lambda x: format_field(x))
 
         df['RANK'] = df['RANK'].apply(lambda x: int(x))
-        df = df[(df['RANK']>0) & (df['RANK']<=20)]
+        df = df[(df['RANK'] > 0) & (df['RANK'] <= 20)]
         df.rename(columns=SHF_name_map, inplace=True)
         df = df[list(SHF_name_map.values())]
 
         return df, ""
+
 
 class DCEAgent(RestAgent):
     def __init__(self):
@@ -95,6 +101,7 @@ class DCEAgent(RestAgent):
     3		兴证期货	12,835		4,405		
     4		西南期货	11,054		6,614		
     '''
+
     def _parse_trade_file(self, file, date):
         filename = file.name.encode('cp437').decode('gbk')
         name_items = filename.split("_")
@@ -103,7 +110,7 @@ class DCEAgent(RestAgent):
         lines = file.readlines()
         df_list = []
 
-        if date >'2015-12-31':
+        if date > '2015-12-31':
             charset = 'utf-8'
         else:
             charset = 'gbk'
@@ -132,7 +139,6 @@ class DCEAgent(RestAgent):
         df_result['symbol'] = symbol
         return df_result
 
-
     def get_trade_rank(self, date):
         url = 'http://www.dce.com.cn/publicweb/quotesdata/exportMemberDealPosiQuotesBatchData.html'
         year, month, day = split_date(date, '%Y-%m-%d')
@@ -159,6 +165,7 @@ class DCEAgent(RestAgent):
 
         return df_result, ""
 
+
 class CZCAgent(RestAgent):
     def __init__(self):
         RestAgent.__init__(self)
@@ -171,6 +178,7 @@ class CZCAgent(RestAgent):
     3     |徽商期货      |66,887      |-29,680   |招商期货      |17,302    |-3,063    |招商期货      |20,519    |-2,788    
     4     |光大期货      |66,322      |-10,134   |永安期货      |17,193    |784       |中信期货      |15,779    |716       
     '''
+
     def _get_url_by_date(self, date):
         year, month, day = split_date(date, '%Y-%m-%d')
         date_int = int(date_convert(date, '%Y-%m-%d', "%Y%m%d"))
@@ -188,7 +196,7 @@ class CZCAgent(RestAgent):
 
     def _get_head(self, text):
         items = self._split_field(text)
-        items[1] = '成交量'   + items[1]
+        items[1] = '成交量' + items[1]
         items[3] = '成交量增减'
         items[4] = '持买仓量' + items[4]
         items[6] = '持买仓量增减'
@@ -218,7 +226,7 @@ class CZCAgent(RestAgent):
             data.append(items)
         return data
 
-    def _split_field(self, text, splitter = "|"):
+    def _split_field(self, text, splitter="|"):
         items = text.split(splitter)
         result = [str(x).strip().replace('\r\n', '') for x in items]
         return result
@@ -227,7 +235,7 @@ class CZCAgent(RestAgent):
         lines = file.readlines()
         df_list = []
         for i in range(len(lines)):
-            items = self._split_field(lines[i], splitter = ',')
+            items = self._split_field(lines[i], splitter=',')
             if items[0][0:2] == '合约':
                 code = self._get_code(lines[i])
                 heads = self.get_head(lines[i], old=True)
@@ -246,14 +254,13 @@ class CZCAgent(RestAgent):
         df_result = _concat_df(df_list)
         return df_result
 
-
     def _parse_trade_file(self, file):
         lines = file.readlines()
         df_list = []
         for i in range(len(lines)):
             items = self._split_field(lines[i], splitter='|')
             if len(items) == 10 and items[0] == '名次':
-                code = self._get_code(lines[i-1])
+                code = self._get_code(lines[i - 1])
                 heads = self.get_head(lines[i], old=False)
                 a = i
                 while True:
@@ -272,10 +279,9 @@ class CZCAgent(RestAgent):
 
     def parse_trade_file(self, file, date):
         if date < '2015-10-01':
-            return  self._parse_trade_file_old(file)
+            return self._parse_trade_file_old(file)
         else:
             return self._parse_trade_file(file)
-
 
     def get_trade_rank(self, date):
         url = self._get_url_by_date(date)
@@ -285,6 +291,7 @@ class CZCAgent(RestAgent):
         _rename_df(df)
 
         return df, ""
+
 
 class CFEAgent(RestAgent):
 
@@ -319,7 +326,7 @@ class CFEAgent(RestAgent):
 
             data = {}
             for subElement in dataElements:
-                key   = subElement.tag
+                key = subElement.tag
                 value = subElement.text
                 if key in ['instrumentid', 'datatypeid', 'rank', 'shortname', 'volume', 'varvolume']:
                     data[key] = value
@@ -327,34 +334,35 @@ class CFEAgent(RestAgent):
         df = pd.DataFrame(data_list)
 
         datatype_map = {
-            "0" : "成交量",
-            "1" : "持买单量",
-            "2" : "持卖单量",
+            "0": "成交量",
+            "1": "持买单量",
+            "2": "持卖单量",
         }
 
         df_list = []
         for type, name in datatype_map.items():
             df_tmp = df[df['datatypeid'] == type].copy()
             df_tmp['rank'] = df_tmp['rank'].apply(lambda x: int(x))
-            df_tmp.rename(columns={"instrumentid" : "symbol"}, inplace=True)
-            df_tmp.rename(columns={"rank" : "名次"}, inplace=True)
-            df_tmp.rename(columns={"shortname" : name + "期货公司"}, inplace=True)
+            df_tmp.rename(columns={"instrumentid": "symbol"}, inplace=True)
+            df_tmp.rename(columns={"rank": "名次"}, inplace=True)
+            df_tmp.rename(columns={"shortname": name + "期货公司"}, inplace=True)
             df_tmp.rename(columns={"volume": name}, inplace=True)
             df_tmp.rename(columns={"varvolume": name + "增减"}, inplace=True)
             df_tmp.drop(['datatypeid'], axis=1, inplace=True)
-            df_tmp.set_index(['symbol','名次'], inplace=True)
+            df_tmp.set_index(['symbol', '名次'], inplace=True)
             df_list.append(df_tmp)
 
         return _merge_df(df_list)
+
 
 class SinaFuturesAgent(RestAgent):
     def __init__(self):
         RestAgent.__init__(self)
         self.dict_market_map = {
-            '沪' : 'SHF',
-            '连' : 'DCE',
-            '郑' : 'CZC',
-            '油' : 'INE',
+            '沪': 'SHF',
+            '连': 'DCE',
+            '郑': 'CZC',
+            '油': 'INE',
         }
 
     def convert_market(self, market, product=''):
@@ -400,29 +408,29 @@ class SinaFuturesAgent(RestAgent):
         if self._is_cfe_code(code):
             pass
         else:
-            if len(fields) < 18 :
+            if len(fields) < 18:
                 return None
 
             quote = {
-                'code'     : code,
-                'instname' : fields[0],
-                'time'     : fields[1],
-                'open'     : fields[2],
-                'high'     : fields[3],
-                'low'      : fields[4],
-                'preclose' : fields[5],
+                'code': code,
+                'instname': fields[0],
+                'time': fields[1],
+                'open': fields[2],
+                'high': fields[3],
+                'low': fields[4],
+                'preclose': fields[5],
                 'bidprice1': fields[6],
                 'askprice1': fields[7],
-                'last'      : fields[8],
-                'settle'    : fields[9],
-                'presettle' : fields[10],
-                'askvol1'   : fields[11],
-                'bidvol1'   : fields[12],
-                'oi'        : fields[13],
-                'volume'   : fields[14],
-                'exchange' : self.convert_market(fields[15]),
-                'product'  : fields[16],
-                'date'     : fields[17],
+                'last': fields[8],
+                'settle': fields[9],
+                'presettle': fields[10],
+                'askvol1': fields[11],
+                'bidvol1': fields[12],
+                'oi': fields[13],
+                'volume': fields[14],
+                'exchange': self.convert_market(fields[15]),
+                'product': fields[16],
+                'date': fields[17],
             }
 
             return quote
@@ -445,17 +453,21 @@ class SinaFuturesAgent(RestAgent):
                 return None, '不支持的K线类型'
 
             if type == '1d':
-                url = 'http://stock2.finance.sina.com.cn/futures/api/json.php/CffexFuturesService.getCffexFuturesDailyKLine?symbol=%s' % (code)
+                url = 'http://stock2.finance.sina.com.cn/futures/api/json.php/CffexFuturesService.getCffexFuturesDailyKLine?symbol=%s' % (
+                    code)
             else:
-                url = 'http://stock2.finance.sina.com.cn/futures/api/json.php/CffexFuturesService.getCffexFuturesMiniKLine%s?symbol=%s' % (type, code)
+                url = 'http://stock2.finance.sina.com.cn/futures/api/json.php/CffexFuturesService.getCffexFuturesMiniKLine%s?symbol=%s' % (
+                type, code)
         else:
             if type not in ['5m', '15m', '30m', '60m', '1d']:
                 return None, '不支持的K线类型'
 
             if type == '1d':
-                url = 'http://stock2.finance.sina.com.cn/futures/api/json.php/IndexService.getInnerFuturesDailyKLine?symbol=%s' % (code)
+                url = 'http://stock2.finance.sina.com.cn/futures/api/json.php/IndexService.getInnerFuturesDailyKLine?symbol=%s' % (
+                    code)
             else:
-                url = 'http://stock2.finance.sina.com.cn/futures/api/json.php/IndexService.getInnerFuturesMiniKLine%s?symbol=%s' % (type, code)
+                url = 'http://stock2.finance.sina.com.cn/futures/api/json.php/IndexService.getInnerFuturesMiniKLine%s?symbol=%s' % (
+                type, code)
 
         response = self.do_request(url)
         if response is None or response == 'null':
@@ -466,4 +478,3 @@ class SinaFuturesAgent(RestAgent):
         df.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume']
 
         return df, ''
-
