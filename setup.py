@@ -16,17 +16,18 @@ def read_install_requires():
     res = list(map(lambda s: s.replace('\n', ''), res))
     return res
 
+
 setup(
     # Install data files specified in MANIFEST.in file.
     include_package_data=True,
-    #package_data={'': ['*.json', '*.css', '*.html']},
+    # package_data={'': ['*.json', '*.css', '*.html']},
     # Package Information
-    name='OpenDataTools',
-    url='https://github.com/PKUJohnson/OpenData',
+    name='InvestOpenDataTools',
+    url='https://github.com/suuuch/InvestOpenData',
     version=ver,
-        license='Apache 2.0',
+    license='Apache 2.0',
     # information
-    description='Open source data tools.',
+    description='Open source data tools Fork .',
     long_description="",
     keywords="data,crawler,free",
     classifiers=[
@@ -49,5 +50,5 @@ setup(
     install_requires=read_install_requires(),
     packages=find_packages(),
     # author
-    author='PKUJohnson'
+    author='suuuch'
 )
