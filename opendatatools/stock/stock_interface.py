@@ -14,12 +14,12 @@ cninfo_agent = CNInfoAgent()
 eastmoney_agent = EastMoneyAgent()
 
 xq_count_map = {
-    '1m': -142,
-    '5m': -142,
-    '15m': -142,
-    '30m': -142,
-    '60m': -142,
-    'day': -142,
+    '1m': 240,
+    '5m': 48,
+    '15m': 16,
+    '30m': 8,
+    '60m': 4,
+    'day': 1,
 }
 
 bar_span_map = {
@@ -147,7 +147,7 @@ def get_kline(symbol, start_date, end_date, period='day'):
     end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d') + datetime.timedelta(days=1)
     timestamp = end_date.timestamp()
 
-    cnt = (end_date - start_date).days * -1
+    cnt = (end_date - start_date).days * -1 * xq_count_map[period]
     timestamp = int(timestamp * 1000)
     df, msg = xq_agent.get_kline(symbol, timestamp, period, cnt)
 
