@@ -142,22 +142,20 @@ def fill_df(df, period, trade_date, symbol):
 
 
 # period 1m, 5m, 15m, 30m, 60m, day
-def get_kline(symbol, trade_date, period):
-    curr_date = datetime.datetime.strptime(trade_date, '%Y-%m-%d')
-    next_date = datetime.datetime.strptime(trade_date, '%Y-%m-%d') + datetime.timedelta(days=1)
-    timestamp = next_date.timestamp()
+def get_kline(symbol, start_date, end_date, period='day'):
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d') + datetime.timedelta(days=1)
+    timestamp = end_date.timestamp()
 
+    cnt = (end_date - start_date).days * -1
     timestamp = int(timestamp * 1000)
-    df, msg = xq_agent.get_kline(symbol, timestamp, period, xq_count_map[period])
+    df, msg = xq_agent.get_kline(symbol, timestamp, period, cnt)
+
     if len(df) == 0:
         return df, msg
 
-    df = df[(df.time < next_date) & (df.time >= curr_date)]
-    if len(df) < abs(xq_count_map[period]):
-        df_new = fill_df(df, period, trade_date, symbol)
-        return df_new, ''
-    else:
-        return df, ''
+    df = df[(df.time < end_date) & (df.time >= start_date)]
+    return df, ''
 
 
 def get_kline_multisymbol(symbols, trade_date, period):

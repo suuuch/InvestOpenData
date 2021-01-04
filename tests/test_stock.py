@@ -34,3 +34,8 @@ class TestStock(unittest.TestCase):
     def test_get_trade_detail(self):
         df_total, _ = stock.get_trade_detail(symbol='000001.SZ', trade_date='2020-12-24')
         assert (len(df_total) > 0)
+
+    def test_get_kline(self):
+        df_total, _ = stock.get_kline(symbol='000001.SZ', start_date='2020-12-01', end_date='2021-01-04', period='day')
+        print(df_total)
+        assert (len(df_total) > 0)
