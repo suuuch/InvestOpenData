@@ -39,3 +39,18 @@ class TestStock(unittest.TestCase):
         df_total, _ = stock.get_kline(symbol='000001.SZ', start_date='2020-12-01', end_date='2021-01-04', period='day')
         print(df_total)
         assert (len(df_total) > 0)
+
+    def test_stock_base_info(self):
+        df_total, _ = stock.get_stock_base_data(symbol='002625')
+        print(df_total)
+        assert (len(df_total) > 0)
+
+    def test_report_main_data(self):
+        df_total, _ = stock.get_report_main_data(symbol='002625')
+        print(df_total)
+        assert (len(df_total) > 0)
+
+    def test_report_data(self):
+        df_total, _ = stock.get_report_data(symbol='002625',report_type='lrb')
+        print(df_total)
+        assert (len(df_total) > 0)

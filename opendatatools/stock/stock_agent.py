@@ -555,138 +555,140 @@ class SinaAgent(RestAgent):
 
 
 class CNInfoAgent(RestAgent):
+    base_info_columns = {'F032V': '所属行业',
+                         'MARKET': '所属市场',
+                         'F010D': '成立日期',
+                         'F006V': '邮政编码',
+                         'F044V': '入选指数',
+                         'F015V': '主营业务',
+                         'F013V': '联系电话',
+                         'F007N': '每股面值(元)',
+                         'F003V': '法人代表',
+                         'F001V': '英文名称',
+                         'F011V': '官方网址',
+                         'F017V': '机构简介',
+                         'F005V': '办公地址',
+                         'F014V': '传真',
+                         'F004V': '注册地址',
+                         'F012V': '电子邮箱',
+                         'F006D': '上市日期',
+                         'F002V': '曾用简称',
+                         'ORGNAME': '公司名称',
+                         'F016V': '经营范围',
+                         'F018V': '公司董秘',
+                         'F042V': '总经理',
+                         'ASECNAME': '证券名称',
+                         'ASECCODE': '证券代码',
+                         'BSECNAME': 'BSECNAME',
+                         'BSECCODE': 'BSECCODE',
+                         'HSECNAME': 'HSECNAME',
+                         'HSECCODE': 'HSECCODE',
+                         'F052V': 'F052V',
+                         'F053V': 'F053V',
+                         'SECCODE': '交易所代码',
+                         'F028N': '首发募资净额(万元)',
+                         'F008N': '首发价格(元)',
+                         'F047V': '首发主承销商',
+
+                         }
+    main_report_columns = {'ENDDATE': 'END_DATE',
+                           'F004N': '基本每股收益(元)',
+                           'F008N': '每股净资产(元)',
+                           'F010N': '每股资本公积金(元)',
+                           'F011N': '营业利润率(%)',
+                           'F016N': '总资产报酬率(%)',
+                           'F017N': '净利润率(%)',
+                           'F022N': '应收账款周转率(次)',
+                           'F023N': '存货周转率(次)',
+                           'F025N': '总资产周转率(次)',
+                           'F026N': '固定资产周转率(次)',
+                           'F029N': '流动资产周转率(次)',
+                           'F041N': '资产负债比率(%)',
+                           'F042N': '流动比率',
+                           'F043N': '速动比率',
+                           'F052N': '营业收入增长率(%)',
+                           'F053N': '净利润增长率(%)',
+                           'F054N': '净资产增长率(%)',
+                           'F056N': '总资产增长率(%)',
+                           'F058N': '营业利润增长率(%)',
+                           'F067N': 'F067N',
+                           'F078N': 'F078N', }
+
     def __init__(self):
         RestAgent.__init__(self)
 
-    @staticmethod
-    def clear_text(text):
-        return text.replace('\n', '').strip()
+    def get_company_base_data(self, symbol):
 
-    def _parse_report_file(self, file):
-        lines = file.readlines()
-        data_list = []
-        for i in range(len(lines)):
-            items = lines[i].decode('gbk').split()
-            if items[0][:2] == '机构':
-                head = items[0].split(sep=',')
-            else:
-                items = lines[i].decode('gbk')[1:]
-                data = items.split(sep=',')
-                data[0] = data[0][1:-1]
-                data[-1] = remove_non_numerical(data[-1])
-                data_list.append(data)
-        df = pd.DataFrame(data_list)
-        df.columns = head
-        return df
-
-    def get_report_data(self, market, symbol, type):
-
-        url = 'http://www.cninfo.com.cn/cninfo-new/data/download'
+        url = 'http://www.cninfo.com.cn/data20/companyOverview/getCompanyIntroduction'
         data = {
-            'market': market,
-            'type': type,
-            'code': symbol,
-            'orgid': 'gs%s%s' % (market, symbol),
-            'minYear': '1990',
-            'maxYear': '2018',
+            'scode': symbol
         }
 
-        response = self.do_request(url, param=data, method='POST', type='binary')
-        '''if response is None:
-            return None, '没有获取到数据'
-        else:
-        '''
-        try:
-            zip_ref = zipfile.ZipFile(io.BytesIO(response))
-            df_list = []
-            for finfo in zip_ref.infolist():
-                file = zip_ref.open(finfo, 'r')
-                df = self._parse_report_file(file)
-                df_list.append(df)
-            df_result = _concat_df(df_list)
-            df_result.reset_index(inplace=True, drop=True)
+        response = self.do_request(url, param=data, method='GET', type='json')
+        data = response['data']
+        if data['resultCode'] != '200':
+            return None, data['resultMsg']
+        rst = dict()
+        records = data['records'][0]
+        rst.update(records['basicInformation'][0])
+        rst.update(records['listingInformation'][0])
+        df = pd.DataFrame([rst])
+        df = df.rename(columns=self.base_info_columns)
+        return df, ''
 
-            return df_result, ''
-        except:
-            return None, '获取数据失败'
+    def __get_report_data(self, url, data, periods):
+        response = self.do_request(url, param=data, method='GET', type='json')
+        data = response['data']
+        if data['resultCode'] != '200':
+            return None, data['resultMsg']
+        rst = list()
+        records = data['records'][0]
+        rst.extend(records.get(periods))
+        df = pd.DataFrame(rst)
+        return df
+
+    def get_report_main_data(self, symbol, periods='year'):
+        url = 'http://www.cninfo.com.cn/data20/financialData/getMainIndicators'
+        data = {
+            'scode': symbol,
+            'sign': '1'
+        }
+        df = self.__get_report_data(url, data, periods)
+        df = df.rename(columns=self.main_report_columns)
+        df['symbol'] = symbol
+        if len(df) > 0:
+            return df, ''
+        else:
+            assert '找不到对应数据'
+
+    def get_report_data(self, symbol, report_type, periods='year'):
+        if report_type == 'lrb':
+            url = 'http://www.cninfo.com.cn/data20/financialData/getIncomeStatement'
+        elif report_type == 'fzb':
+            url = 'http://www.cninfo.com.cn/data20/financialData/getBalanceSheets'
+        elif report_type == 'llb':
+            url = 'http://www.cninfo.com.cn/data20/financialData/getCashFlowStatement'
+        else:
+            return None, '不支持报表类型'
+
+        data = {
+            'scode': symbol,
+            'sign': 1
+        }
+        df = self.__get_report_data(url, data, periods)
+        df = df.set_index('index')
+        df = df.T
+        df['symbol'] = symbol
+        if len(df) > 0:
+            return df, ''
+        else:
+            assert '找不到对应数据'
 
     def get_shareholder_structure(self, market, symbol):
-
-        if symbol.startswith('002'):
-            board = 'sme'
-        elif symbol.startswith('3'):
-            board = 'cn'
-        else:
-            board = 'mb'
-
-        url = 'http://www.cninfo.com.cn/information/lastest/%s%s%s.html' % (market, board, symbol)
-        response = self.do_request(url, encoding='gb18030')
-        if response is None:
-            return None, '获取数据失败'
-
-        soup = BeautifulSoup(response, "html5lib")
-        divs = soup.find_all('div')
-
-        data = []
-        for div in divs:
-            if div.has_attr('class') and 'clear' in div['class']:
-                tables = div.find_all('table')
-
-                for table in tables:
-                    rows = table.findAll('tr')
-                    for row in rows:
-                        cols = row.findAll('td')
-                        if len(cols) == 2:
-                            indicator = CNInfoAgent.clear_text(cols[0].text).replace('：', '')
-                            value = CNInfoAgent.clear_text(cols[1].text)
-
-                            data.append({
-                                "indicator": indicator,
-                                "value": value,
-                            })
-                break
-
-        return pd.DataFrame(data), ""
+        pass
 
     def get_dividend(self, symbol):
-        symbol = symbol[:6]
-        url = "http://www.cninfo.com.cn/information/dividend/szmb%s.html"
-        response = self.do_request(url % symbol, method='GET', encoding='gbk')
-        if response is None:
-            return pd.DataFrame([])
-        soup = BeautifulSoup(response, 'html5lib')
-        # get name_cn
-        tds = soup.find_all('td')
-        for td in tds:
-            if td.has_attr('style') and 'padding-right:10px' in td['style']:
-                name_cn = td.text.split('：')[-1]
-
-        # get dividend_data
-        divs = soup.find_all('div')
-        for div in divs:
-            if div.has_attr('class') and 'clear' in div['class']:
-                trs = div.find_all('tr')
-                if trs == []:
-                    continue
-                data_list = []
-                for tr in trs[1:]:
-                    data = [symbol, name_cn]
-                    tds = tr.find_all('td')
-                    for td in tds:
-                        text = td.text.replace(' ', '').replace('\n', '').replace('\xa0', '')
-                        data.append(text)
-                    data_list.append(data)
-                df_res = pd.DataFrame(data_list, columns=['股票代码', '公司名称', '分红年度', '分红方案', '股权登记日',
-                                                          '除权日', '红股上市日'])
-                df_res['股权登记日'] = df_res['股权登记日'].map(time_map)
-                df_res['除权日'] = df_res['除权日'].map(time_map)
-                df_res['分红方案'] = df_res['分红方案'].map(plan_map)
-                df_res['税后股利'] = df_res['分红方案'].map(lambda x: 0.8 * float(x))
-                df_res['公司代码'] = df_res['股票代码']
-                df = df_res[['公司代码', '股权登记日', '分红方案', '税后股利', '除权日', '公司名称', '股票代码']]
-                df.columns = ['COMPANY_CODE', 'DIVIDEND_DATE', 'DIVIDEND_PER_SHARE1_A',
-                              'DIVIDEND_PER_SHARE2_A', 'EX_DIVIDEND_DATE_A', 'SECURITY_ABBR_A', 'SECURITY_CODE_A']
-                return df
+        pass
 
 
 class EastMoneyAgent(RestAgent):

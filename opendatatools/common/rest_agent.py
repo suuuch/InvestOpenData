@@ -55,6 +55,8 @@ class RestAgent(object):
 
             if type == 'text':
                 return res.text
+            if type == 'json':
+                return res.json()
             else:
                 return res.content
 

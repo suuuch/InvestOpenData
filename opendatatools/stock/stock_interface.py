@@ -229,23 +229,27 @@ def get_trade_detail(symbol, trade_date):
     return sina_agent.get_trade_detail(symbol, trade_date)
 
 
-def get_report_data(symbol='600000.SH', type='资产负债表'):
-    dict_type = {
-        '利润表': 'lrb',
-        '资产负债表': 'fzb',
-        '现金流量表': 'llb',
-    }
-
-    if type not in dict_type:
-        return None, 'type输入错误，可以输入 %s' % dict_type.keys()
-
-    data = symbol.split(sep='.')
-    market = data[1].lower()
-    code = data[0]
-    return cninfo_agent.get_report_data(market, code, dict_type[type])
+def get_report_main_data(symbol='600000', periods='year'):
+    """
+    periods: one,middle,three,year
+    :arg
+    """
+    return cninfo_agent.get_report_main_data(symbol, periods)
 
 
-def get_shareholder_structure(symbol='600000.SH'):
+def get_report_data(symbol='600000', report_type='fzb', periods='year'):
+    """
+    periods: one,middle,three,year
+    :arg
+    """
+    return cninfo_agent.get_report_data(symbol, report_type, periods)
+
+
+def get_stock_base_data(symbol):
+    return cninfo_agent.get_company_base_data(symbol)
+
+
+def get_shareholder_structure(symbol='600000'):
     data = symbol.split(sep='.')
     market = data[1].lower()
     code = data[0]
