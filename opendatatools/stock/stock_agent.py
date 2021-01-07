@@ -613,6 +613,15 @@ class CNInfoAgent(RestAgent):
                            'F058N': '营业利润增长率(%)',
                            'F067N': 'F067N',
                            'F078N': 'F078N', }
+    circulating_stockholders_columns = {
+        'F001D': '公布时间',
+        'F002V': '股东名称',
+        'F003N': '持股数量(万股)',
+        'F004N': '持股比例',
+        'F005N': '股东名词',
+        'F006V': '股份性质',
+        'F007V': '持股比例变动情况(%)',
+    }
 
     def __init__(self):
         RestAgent.__init__(self)
@@ -636,13 +645,16 @@ class CNInfoAgent(RestAgent):
         df = df.rename(columns=self.base_info_columns)
         return df, ''
 
-    def __get_report_data(self, url, data, periods):
+    def __get_records_data(self, url, data):
         response = self.do_request(url, param=data, method='GET', type='json')
         data = response['data']
         if data['resultCode'] != '200':
             return None, data['resultMsg']
+        return data['records']
+
+    def __get_report_data(self, url, data, periods):
         rst = list()
-        records = data['records'][0]
+        records = self.__get_records_data(url, data)[0]
         rst.extend(records.get(periods))
         df = pd.DataFrame(rst)
         return df
@@ -689,6 +701,17 @@ class CNInfoAgent(RestAgent):
 
     def get_dividend(self, symbol):
         pass
+
+    def get_top_ten_circulating_stockholders(self, symbol):
+        url = 'http://www.cninfo.com.cn/data20/stockholderCapital/getTopTenCirculatingStockholders'
+        data = {
+            'scode': symbol
+        }
+        records = self.__get_records_data(url, data)
+        df = pd.DataFrame(records)
+        df = df.rename(columns=self.circulating_stockholders_columns)
+        df['symbol'] = symbol
+        return df, ''
 
 
 class EastMoneyAgent(RestAgent):

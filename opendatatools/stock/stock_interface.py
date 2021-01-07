@@ -245,6 +245,14 @@ def get_report_data(symbol='600000', report_type='fzb', periods='year'):
     return cninfo_agent.get_report_data(symbol, report_type, periods)
 
 
+def get_top_ten_circulating_stockholders(symbol='600000'):
+    """
+    periods: one,middle,three,year
+    :arg
+    """
+    return cninfo_agent.get_top_ten_circulating_stockholders(symbol)
+
+
 def get_stock_base_data(symbol):
     return cninfo_agent.get_company_base_data(symbol)
 

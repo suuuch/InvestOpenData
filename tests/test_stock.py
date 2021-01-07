@@ -51,6 +51,11 @@ class TestStock(unittest.TestCase):
         assert (len(df_total) > 0)
 
     def test_report_data(self):
-        df_total, _ = stock.get_report_data(symbol='002625',report_type='lrb')
+        df_total, _ = stock.get_report_data(symbol='002625', report_type='lrb')
+        print(df_total)
+        assert (len(df_total) > 0)
+
+    def test_top_ten_circulating_stockholders(self):
+        df_total, _ = stock.get_top_ten_circulating_stockholders(symbol='002625')
         print(df_total)
         assert (len(df_total) > 0)
