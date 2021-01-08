@@ -258,10 +258,7 @@ def get_stock_base_data(symbol):
 
 
 def get_shareholder_structure(symbol='600000'):
-    data = symbol.split(sep='.')
-    market = data[1].lower()
-    code = data[0]
-    return cninfo_agent.get_shareholder_structure(market, code)
+    return cninfo_agent.get_shareholder_structure(symbol)
 
 
 # 单位：百万元

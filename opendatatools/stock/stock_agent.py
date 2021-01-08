@@ -622,6 +622,16 @@ class CNInfoAgent(RestAgent):
         'F006V': '股份性质',
         'F007V': '持股比例变动情况(%)',
     }
+    shareholder_structure_columns = {
+        'F002V': '变动原因',
+        'F003N': '总股本',
+        'F021N': '已流通股份',
+        'F022N': '人民币普通股/CDR',
+        'F023N': '境内上市外资股(B股)',
+        'F024N': '境外上市外资股(H股)',
+        'F028N': '流通受限股份',
+        'VARYDATE': '变动日期',
+    }
 
     def __init__(self):
         RestAgent.__init__(self)
@@ -696,8 +706,16 @@ class CNInfoAgent(RestAgent):
         else:
             assert '找不到对应数据'
 
-    def get_shareholder_structure(self, market, symbol):
-        pass
+    def get_shareholder_structure(self, symbol):
+        url = 'http://www.cninfo.com.cn/data20/stockholderCapital/getStockStructure'
+        data = {
+            'scode': symbol
+        }
+        records = self.__get_records_data(url, data)
+        df = pd.DataFrame(records)
+        df = df.rename(columns=self.shareholder_structure_columns)
+        df['symbol'] = symbol
+        return df, ''
 
     def get_dividend(self, symbol):
         pass

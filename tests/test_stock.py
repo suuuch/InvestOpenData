@@ -59,3 +59,8 @@ class TestStock(unittest.TestCase):
         df_total, _ = stock.get_top_ten_circulating_stockholders(symbol='002625')
         print(df_total)
         assert (len(df_total) > 0)
+
+    def test_get_shareholder_structure(self):
+        df_total, _ = stock.get_shareholder_structure(symbol='002625')
+        print(df_total)
+        assert (len(df_total) > 0)
