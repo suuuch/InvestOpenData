@@ -632,6 +632,11 @@ class CNInfoAgent(RestAgent):
         'F028N': '流通受限股份',
         'VARYDATE': '变动日期',
     }
+    fund_holding_columns = {
+        'ENDDATE': '报告期',
+        'F001N': '基金覆盖家数(只)',
+        'F002N': '持股总数(股)',
+    }
 
     def __init__(self):
         RestAgent.__init__(self)
@@ -731,6 +736,17 @@ class CNInfoAgent(RestAgent):
         df['symbol'] = symbol
         return df, ''
 
+    def get_stock_fund_holding(self, symbol):
+        url = 'http://www.cninfo.com.cn/data20/stockholderCapital/getFundHoldings'
+        data = {
+            'scode': symbol
+        }
+        records = self.__get_records_data(url, data)
+        df = pd.DataFrame(records)
+        df = df.rename(columns=self.fund_holding_columns)
+        df['symbol'] = symbol
+        return df, ''
+
 
 class EastMoneyAgent(RestAgent):
     """
@@ -784,81 +800,3 @@ class EastMoneyAgent(RestAgent):
         df = self._parse_hist_money_flow(json_rsp)
         return df, ''
 
-    def _get_realtime_money_flow(self, url):
-        response = self.do_request(url)
-        if response is None:
-            return None, '获取数据失败'
-
-        jsonobj = json.loads(response)
-        result = {}
-        result['Time'] = jsonobj['xa'].split(',')
-        result['ZLJLRJE'] = list()
-        result['CDDJLRJE'] = list()
-        result['DDJLRJE'] = list()
-        result['ZDJLRJE'] = list()
-        result['XDJLRJE'] = list()
-        for data in jsonobj['ya']:
-            items = data.split(',')
-            result['ZLJLRJE'].append(items[0])
-            result['CDDJLRJE'].append(items[1])
-            result['DDJLRJE'].append(items[2])
-            result['ZDJLRJE'].append(items[3])
-            result['XDJLRJE'].append(items[4])
-
-        df = pd.DataFrame().from_dict(result, orient='index').T
-        df.dropna(inplace=True)
-        return df, ''
-
-    def get_realtime_money_flow(self, symbol):
-        url = 'http://ff.eastmoney.com/EM_CapitalFlowInterface/api/js?id=%s&type=ff&check=MLBMS&js={(x)}&rtntype=3&acces_token=1942f5da9b46b069953c873404aad4b5' % symbol
-        return self._get_realtime_money_flow(url)
-
-    def get_realtime_money_flow_market(self):
-        url = 'http://ff.eastmoney.com/EM_CapitalFlowInterface/api/js?id=ls&type=ff&check=MLBMS&js={(x)}&rtntype=3&acces_token=1942f5da9b46b069953c873404aad4b5'
-        return self._get_realtime_money_flow(url)
-
-    # ==============================================================================
-    # 一次性获取所有股票的实时资金流，并按照主力净流入净额排序
-    ## 指标定义
-    # 超大单：大于等于50万股或者100万元的成交单;
-    # 大单：大于等于10万股或者20万元且小于50万股和100万元的成交单;
-    # 中单：大于等于2万股或者4万元且小于10万股和20万元的成交单;
-    # 小单：小于2万股和4万元的成交单;
-    # 流入：买入成交额;
-    # 流出：卖出成交额;
-    # 主力流入：超大单加大单买入成交额之和;
-    # 主力流出：超大单加大单卖出成交额之和;
-    # 净额：流入-流出;
-    # 净比：(流入-流出)/总成交额;
-    # 单位：亿元
-    # ==============================================================================
-    def toDataFrame(self, ll):
-        dataframe = []
-        for l in ll:
-            l = l.replace('-', '0')
-            temp = l.split(",")[1:]
-            temp[2:-2] = map(eval, temp[2:-2])
-            dataframe.append(temp)
-        dataframe = pd.DataFrame(dataframe)
-        dataframe.columns = [u'代码', u'名称', u'最新价', u'今日涨跌幅', u'今日主力净流入净额', u'今日主力净流入净占比', u'今日超大单净流入净额', u'今日超大单净流入净占比',
-                             u'今日大单净流入净额', u'今日大单净流入净占比', u'今日中单净流入净额', u'今日中单净流入净占比', u'今日小单净流入净额', u'今日小单净流入净占比',
-                             u'time', u'未知']
-        return dataframe
-
-    def _get_realtime_allstock_flow(self, url):
-        response = self.do_request(url)
-        if response is None:
-            return None, '获取数据失败'
-        pages = 'pages'
-        date = 'date'
-        data = 'data'
-        data = eval(response[13:])
-        flashflow = data['data']
-        df = self.toDataFrame(flashflow)
-        df.index = df.ix[:, 0]
-        df.dropna(inplace=True)
-        return df, ''
-
-    def get_allstock_flow(self):
-        url = 'http://nufm.dfcfw.com/EM_Finance2014NumericApplication/JS.aspx?type=ct&st=(BalFlowMain)&sr=-1&p=1&ps=3700&js=var%20ucjEIgIa={pages:(pc),date:%222014-10-22%22,data:[(x)]}&token=1942f5da9b46b069953c873404aad4b5&cmd=C._AB&sty=DCFFITA&rt=50984894'
-        return self._get_realtime_allstock_flow(url)

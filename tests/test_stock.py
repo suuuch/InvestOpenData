@@ -20,10 +20,12 @@ class TestStock(unittest.TestCase):
 
     def test_get_rzrq_info(self):
         df_total, df_detail = stock.get_rzrq_info(market='SH', date='2020-12-24')
+        print(df_detail)
         assert (len(df_total) == 1)
         assert (len(df_detail) > 100)
 
         df_total, df_detail = stock.get_rzrq_info(market='SZ', date='2020-12-24')
+        print(df_detail)
         assert (len(df_total) == 1)
         assert (len(df_detail) > 100)
 
@@ -62,5 +64,10 @@ class TestStock(unittest.TestCase):
 
     def test_get_shareholder_structure(self):
         df_total, _ = stock.get_shareholder_structure(symbol='002625')
+        print(df_total)
+        assert (len(df_total) > 0)
+
+    def test_get_stock_fund_holding(self):
+        df_total, _ = stock.get_stock_fund_holding(symbol='002625')
         print(df_total)
         assert (len(df_total) > 0)

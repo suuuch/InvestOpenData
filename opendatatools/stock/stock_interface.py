@@ -261,6 +261,10 @@ def get_shareholder_structure(symbol='600000'):
     return cninfo_agent.get_shareholder_structure(symbol)
 
 
+def get_stock_fund_holding(symbol='600000'):
+    return cninfo_agent.get_stock_fund_holding(symbol)
+
+
 # 单位：百万元
 def get_hist_money_flow(symbol):
     data = symbol.split(sep='.')
