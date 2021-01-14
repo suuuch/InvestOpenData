@@ -167,6 +167,10 @@ class DCEAgent(RestAgent):
 
 
 class CZCAgent(RestAgent):
+    """
+    郑商所
+    http://www.czce.com.cn/cn/jysj/ccpm/H770304index_1.htm
+    """
     def __init__(self):
         RestAgent.__init__(self)
 
@@ -182,7 +186,8 @@ class CZCAgent(RestAgent):
     def _get_url_by_date(self, date):
         year, month, day = split_date(date, '%Y-%m-%d')
         date_int = int(date_convert(date, '%Y-%m-%d', "%Y%m%d"))
-        url = 'http://old.czce.com.cn/portal/DFSStaticFiles/Future/%d/%d/FutureDataHolding.txt'
+        # http://www.czce.com.cn/cn/DFSStaticFiles/Future/2021/20210114/FutureDataHolding.xls
+        url = 'http://www.czce.com.cn/cn/DFSStaticFiles/Future/%d/%d/FutureDataHolding.txt'
         url_old = 'http://old.czce.com.cn/portal/exchange/%d/datatradeholding/%d.txt'
 
         if date < '2015-10-01':

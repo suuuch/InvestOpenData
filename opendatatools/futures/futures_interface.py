@@ -9,7 +9,8 @@ czc_agent = CZCAgent()
 cfe_agent = CFEAgent()
 sina_agent = SinaFuturesAgent()
 
-def get_trade_rank(market = 'SHF', date = None):
+
+def get_trade_rank(market='SHF', date=None):
     if date is None:
         date = get_target_date(-1, "%Y-%m-%d")
 
@@ -27,8 +28,10 @@ def get_trade_rank(market = 'SHF', date = None):
 
     return None, '不支持的市场类型'
 
+
 def get_quote(codes):
     return sina_agent.get_quote(codes)
+
 
 def get_kline(type, code):
     return sina_agent.get_kline(type, code)
